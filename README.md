@@ -1,36 +1,31 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Gantt Kreatinj
 
-## Getting Started
+> 1 뎁스로 쉽게 수정 가능한 간트 차트
 
-First, run the development server:
+## 소개
+
+일정 변경이 잦은 프로젝트 환경에서 빠르고 직관적으로 일정을 관리할 수 있는 간트 차트 서비스입니다.
+
+### 핵심 가치
+
+**일정을 쉽게 변경할 수 있는 UI/UX, 그러나 실수는 예방해주는 UI/UX**
+
+### 주요 기능
+
+- 드래그 앤 드롭으로 일정 이동
+- 좌우 모서리 드래그로 일정 기간 변경
+- 빈 영역 클릭으로 즉시 일정 추가
+- 모든 수정 내용 자동 추적
+
+### 타겟 사용자
+
+일정 변경이 잦은 씬에서 일정을 관리하는 프로젝트 매니저
+
+## 시작하기
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+# 개발 서버 실행
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+브라우저에서 [http://localhost:3000](http://localhost:3000)을 열어 확인하세요.
