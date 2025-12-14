@@ -1,9 +1,9 @@
 import dayjs from "dayjs";
 import { readdir } from "node:fs/promises";
 
-import type { DateRange, Schedule } from "@/server/schema/schedules";
+import type { DateRange, Schedule, ScheduleWithModificationRecords } from "@/server/schema/schedules";
 
-import { scheduleSchema } from "@/server/schema/schedules";
+import { scheduleWithModificationRecordsSchema } from "@/server/schema/schedules";
 
 const DATA_PATH = "./src/server/data/";
 const FILE_EXTENSION = ".json";
@@ -14,7 +14,7 @@ const FILE_EXTENSION = ".json";
 //   return await file.exists();
 // }
 
-export async function list(range: DateRange): Promise<Schedule[]> {
+export async function list(range: DateRange): Promise<ScheduleWithModificationRecords[]> {
   const rangeStart = dayjs(range[0]);
   const rangeEnd = dayjs(range[1]);
 
@@ -39,11 +39,11 @@ export async function list(range: DateRange): Promise<Schedule[]> {
   return schedules;
 }
 
-export async function read(id: Schedule["id"]): Promise<Schedule> {
+export async function read(id: Schedule["id"]): Promise<ScheduleWithModificationRecords> {
   const path = `${DATA_PATH}${id}${FILE_EXTENSION}`;
   const file = Bun.file(path);
   const contents = await file.json();
-  return scheduleSchema.parse(contents);
+  return scheduleWithModificationRecordsSchema.parse(contents);
 }
 
 export async function remove(id: Schedule["id"]): Promise<void> {
@@ -52,7 +52,33 @@ export async function remove(id: Schedule["id"]): Promise<void> {
   await file.delete();
 }
 
+export async function update(schedule: Schedule): Promise<void> {
+  const path = `${DATA_PATH}${schedule.id}${FILE_EXTENSION}`;
+  const existingSchedule = await read(schedule.id);
+  const scheduleWithModificationRecords = {
+    ...schedule,
+    modificationRecords: [
+      existingSchedule.modificationRecords,
+      {
+        changeDescription: "Schedule updated",
+        modificationDate: dayjs().toISOString(),
+      },
+    ],
+  };
+
+  await Bun.write(path, JSON.stringify(scheduleWithModificationRecords));
+}
+
 export async function write(schedule: Schedule): Promise<void> {
   const path = `${DATA_PATH}${schedule.id}${FILE_EXTENSION}`;
-  await Bun.write(path, JSON.stringify(schedule));
+  const scheduleWithModificationRecords = {
+    ...schedule,
+    modificationRecords: [
+      {
+        changeDescription: "Initial creation",
+        modificationDate: dayjs().toISOString(),
+      }
+    ],
+  };
+  await Bun.write(path, JSON.stringify(scheduleWithModificationRecords));
 }
