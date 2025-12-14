@@ -1,22 +1,32 @@
-import { list, remove, update, write } from "../repositories/schedules";
-import { DateRange, Schedule, ScheduleBody } from "../schema/schedules";
+import { create, list, remove, update } from "../repositories/schedules";
+import {
+  DateRange,
+  Schedule,
+  ScheduleBody,
+  ScheduleWithModificationRecords,
+} from "../schema/schedules";
 
-export async function createSchedule(schedule: ScheduleBody) {
-  const createdSchedule = await write(schedule);
+export async function createSchedule(
+  schedule: ScheduleBody,
+): Promise<ScheduleWithModificationRecords> {
+  const createdSchedule = await create(schedule);
   return createdSchedule;
 }
 
-export async function deleteSchedule(id: Schedule["id"]) {
+export async function deleteSchedule(id: Schedule["id"]): Promise<void> {
   await remove(id);
-  return;
 }
 
-export async function readSchedules(dateRange: DateRange) {
+export async function readSchedules(
+  dateRange: DateRange,
+): Promise<ScheduleWithModificationRecords[]> {
   const schedules = await list(dateRange);
   return schedules;
 }
 
-export async function updateSchedule(schedule: Schedule) {
+export async function updateSchedule(
+  schedule: Schedule,
+): Promise<ScheduleWithModificationRecords> {
   const updatedSchedule = await update(schedule);
   return updatedSchedule;
 }

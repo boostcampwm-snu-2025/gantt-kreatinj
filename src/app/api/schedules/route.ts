@@ -7,7 +7,10 @@ export async function GET(request: NextRequest) {
   const rawStartDate = request.nextUrl.searchParams.get("startDate");
   const rawEndDate = request.nextUrl.searchParams.get("endDate");
   if (!rawStartDate || !rawEndDate) {
-    return new Response(null, { status: 400, statusText: "Missing startDate or endDate parameter" });
+    return new Response(null, {
+      status: 400,
+      statusText: "Missing startDate or endDate parameter",
+    });
   }
   const dateRange = dateRangeSchema.parse([rawStartDate, rawEndDate]);
   const schedules = await readSchedules(dateRange);
