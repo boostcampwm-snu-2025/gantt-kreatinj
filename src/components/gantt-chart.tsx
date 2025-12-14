@@ -172,9 +172,9 @@ export default function GanttChart({
       {dates.map((date) => (
         <div
           className={cn(
-            "h-10 w-full border border-gray-200 text-center text-sm",
+            "flex h-10 w-full items-center justify-center border-r border-b border-gray-300 text-center text-sm",
             date.isWeekend || date.isHoliday
-              ? "bg-red-100 dark:bg-red-900"
+              ? "bg-gray-100 dark:bg-gray-800"
               : "bg-white dark:bg-black",
           )}
           key={date.key}
@@ -182,6 +182,25 @@ export default function GanttChart({
           {date.label}
         </div>
       ))}
+
+      {/* Grid cells for schedule rows */}
+      {schedules.map((_, rowIndex) =>
+        dates.map((date, colIndex) => (
+          <div
+            className={cn(
+              "h-10 w-full border-r border-b border-dashed border-gray-200",
+              date.isWeekend || date.isHoliday
+                ? "bg-gray-100 dark:bg-gray-800"
+                : "bg-white dark:bg-black",
+            )}
+            key={`${rowIndex}-${date.key}`}
+            style={{
+              gridColumn: colIndex + 1,
+              gridRow: rowIndex + 2,
+            }}
+          />
+        )),
+      )}
 
       {schedules.map((schedule, index) => {
         const isDragging =
@@ -203,7 +222,7 @@ export default function GanttChart({
         return (
           <div
             className={cn(
-              "h-10 cursor-move bg-amber-100 select-none",
+              "z-10 h-10 cursor-move bg-amber-100 select-none",
               dragState?.scheduleId === schedule.id && "opacity-70",
             )}
             key={schedule.id}
