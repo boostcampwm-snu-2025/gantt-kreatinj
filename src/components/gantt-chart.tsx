@@ -2,7 +2,7 @@
 
 import dayjs, { type Dayjs } from "dayjs";
 import { range } from "es-toolkit";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { cn } from "@/lib/utils";
 import { ScheduleWithModificationRecords } from "@/server/schema/schedules";
@@ -82,6 +82,18 @@ export default function GanttChart({
     scheduleId: string;
     startX: number;
   }>(null);
+  const [highlightedScheduleId, setHighlightedScheduleId] = useState<
+    null | string
+  >(null);
+
+  useEffect(() => {
+    if (highlightedScheduleId) {
+      const timer = setTimeout(() => {
+        setHighlightedScheduleId(null);
+      }, 600);
+      return () => clearTimeout(timer);
+    }
+  }, [highlightedScheduleId]);
 
   const moveSchedule = (id: string, count: number) => {
     setSchedules((prevSchedules) =>
@@ -135,6 +147,7 @@ export default function GanttChart({
         (a, b) => dayjs(a.startDate).valueOf() - dayjs(b.startDate).valueOf(),
       ),
     );
+    setHighlightedScheduleId(newSchedule.id);
   };
 
   const updateStartDate = (id: string, startDate: Dayjs) => {
@@ -212,6 +225,7 @@ export default function GanttChart({
     if (dragState && dragState.columnOffset !== 0) {
       if (dragState.dragType === "move") {
         moveSchedule(dragState.scheduleId, dragState.columnOffset);
+        setHighlightedScheduleId(dragState.scheduleId);
       } else if (dragState.dragType === "resize-start") {
         const schedule = schedules.find((s) => s.id === dragState.scheduleId);
         if (schedule) {
@@ -223,6 +237,7 @@ export default function GanttChart({
           // 시작일이 종료일 이후가 되지 않도록 제한
           if (newStartDate.isBefore(endDate) || newStartDate.isSame(endDate)) {
             updateStartDate(dragState.scheduleId, newStartDate);
+            setHighlightedScheduleId(dragState.scheduleId);
           }
         }
       } else if (dragState.dragType === "resize-end") {
@@ -236,6 +251,7 @@ export default function GanttChart({
           // 종료일이 시작일 이전이 되지 않도록 제한
           if (newEndDate.isAfter(startDate) || newEndDate.isSame(startDate)) {
             updateEndDate(dragState.scheduleId, newEndDate);
+            setHighlightedScheduleId(dragState.scheduleId);
           }
         }
       }
@@ -348,10 +364,13 @@ export default function GanttChart({
             <div
               className={cn(
                 "group flex h-full w-full cursor-move items-center justify-between select-none",
-                "rounded-md bg-amber-100",
+                "rounded-md",
                 "border border-amber-200 shadow-sm",
-                "transition-shadow hover:shadow-md",
+                "transition-all hover:shadow-md",
                 dragState?.scheduleId === schedule.id && "opacity-70 shadow-lg",
+                highlightedScheduleId === schedule.id
+                  ? "bg-amber-300 animate-[pulse_0.6s_ease-in-out_2]"
+                  : "bg-amber-100",
               )}
               onMouseDown={(e) => handleMouseDown(e, schedule.id, "move")}
             >
