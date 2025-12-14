@@ -76,6 +76,7 @@ export default function GanttChart({
     useState<ScheduleWithModificationRecords[]>(sampleSchedules);
   const [dragState, setDragState] = useState<null | {
     columnOffset: number;
+    dragType: "move" | "resize-start";
     initialStartDate: string;
     scheduleId: string;
     startX: number;
@@ -116,9 +117,9 @@ export default function GanttChart({
     );
   };
 
-  const createSchedule = (startDate: string, endDate: string) => {
+  const createSchedule = (startDate: Dayjs, endDate: Dayjs) => {
     const newSchedule: ScheduleWithModificationRecords = {
-      endDate,
+      endDate: endDate.format("YYYY-MM-DD"),
       id: crypto.randomUUID(),
       modificationRecords: [
         {
@@ -126,7 +127,7 @@ export default function GanttChart({
           modificationDate: dayjs().toISOString(),
         },
       ],
-      startDate,
+      startDate: startDate.format("YYYY-MM-DD"),
     };
     setSchedules((prevSchedules) =>
       [...prevSchedules, newSchedule].toSorted(
@@ -135,13 +136,35 @@ export default function GanttChart({
     );
   };
 
-  const handleMouseDown = (e: React.MouseEvent, scheduleId: string) => {
+  const updateStartDate = (id: string, startDate: Dayjs) => {
+    setSchedules((prevSchedules) =>
+      prevSchedules
+        .map((schedule) =>
+          schedule.id === id
+            ? {
+                ...schedule,
+                startDate: startDate.format("YYYY-MM-DD"),
+              }
+            : schedule,
+        )
+        .toSorted(
+          (a, b) => dayjs(a.startDate).valueOf() - dayjs(b.startDate).valueOf(),
+        ),
+    );
+  };
+
+  const handleMouseDown = (
+    e: React.MouseEvent,
+    scheduleId: string,
+    dragType: "move" | "resize-start" = "move",
+  ) => {
     e.preventDefault();
     const schedule = schedules.find((s) => s.id === scheduleId);
     if (!schedule) return;
 
     setDragState({
       columnOffset: 0,
+      dragType,
       initialStartDate: schedule.startDate,
       scheduleId,
       startX: e.clientX,
@@ -168,7 +191,22 @@ export default function GanttChart({
 
   const handleMouseUp = () => {
     if (dragState && dragState.columnOffset !== 0) {
-      moveSchedule(dragState.scheduleId, dragState.columnOffset);
+      if (dragState.dragType === "move") {
+        moveSchedule(dragState.scheduleId, dragState.columnOffset);
+      } else if (dragState.dragType === "resize-start") {
+        const schedule = schedules.find((s) => s.id === dragState.scheduleId);
+        if (schedule) {
+          const newStartDate = dayjs(dragState.initialStartDate).add(
+            dragState.columnOffset,
+            "day",
+          );
+          const endDate = dayjs(schedule.endDate);
+          // 시작일이 종료일 이후가 되지 않도록 제한
+          if (newStartDate.isBefore(endDate) || newStartDate.isSame(endDate)) {
+            updateStartDate(dragState.scheduleId, newStartDate);
+          }
+        }
+      }
     }
     setDragState(null);
   };
@@ -224,7 +262,8 @@ export default function GanttChart({
             )}
             key={`${rowIndex}-${date.key}`}
             onClick={() => {
-              createSchedule(date.key, date.key);
+              const date = firstDateOnView.add(colIndex, "day");
+              createSchedule(date, date);
             }}
             style={{
               gridColumn: colIndex + 1,
@@ -237,10 +276,16 @@ export default function GanttChart({
       {schedules.map((schedule, index) => {
         const isDragging =
           dragState?.scheduleId === schedule.id && dragState.columnOffset !== 0;
-        const startDate = isDragging
+        const isResizingStart =
+          isDragging && dragState?.dragType === "resize-start";
+        const isMoving = isDragging && dragState?.dragType === "move";
+
+        const startDate = isResizingStart
           ? dayjs(dragState.initialStartDate).add(dragState.columnOffset, "day")
-          : dayjs(schedule.startDate);
-        const endDate = isDragging
+          : isMoving
+            ? dayjs(dragState.initialStartDate).add(dragState.columnOffset, "day")
+            : dayjs(schedule.startDate);
+        const endDate = isMoving
           ? dayjs(schedule.endDate).add(dragState.columnOffset, "day")
           : dayjs(schedule.endDate);
 
@@ -263,14 +308,25 @@ export default function GanttChart({
           >
             <div
               className={cn(
-                "flex h-full w-full cursor-move items-center justify-end select-none",
+                "group relative flex h-full w-full cursor-move items-center justify-between select-none",
                 "rounded-md bg-amber-100 px-3",
                 "border border-amber-200 shadow-sm",
                 "transition-shadow hover:shadow-md",
                 dragState?.scheduleId === schedule.id && "opacity-70 shadow-lg",
               )}
-              onMouseDown={(e) => handleMouseDown(e, schedule.id)}
+              onMouseDown={(e) => handleMouseDown(e, schedule.id, "move")}
             >
+              {/* Start resize handle */}
+              <div
+                className="absolute left-0 top-0 h-full w-2 cursor-ew-resize opacity-0 group-hover:opacity-100 transition-opacity"
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  handleMouseDown(e, schedule.id, "resize-start");
+                }}
+              >
+                <div className="h-full w-full bg-amber-400 rounded-l-md" />
+              </div>
+
               <button
                 className="rounded px-1 transition-colors hover:bg-amber-200"
                 onClick={() => {
