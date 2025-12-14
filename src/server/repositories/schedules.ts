@@ -1,7 +1,7 @@
-import dayjs, { Dayjs } from "dayjs";
+import dayjs from "dayjs";
 import { readdir } from "node:fs/promises";
 
-import type { Schedule } from "@/server/schema/schedules";
+import type { DateRange, Schedule } from "@/server/schema/schedules";
 
 import { scheduleSchema } from "@/server/schema/schedules";
 
@@ -14,7 +14,10 @@ const FILE_EXTENSION = ".json";
 //   return await file.exists();
 // }
 
-export async function list([rangeStart, rangeEnd]: [Dayjs, Dayjs]): Promise<Schedule[]> {
+export async function list(range: DateRange): Promise<Schedule[]> {
+  const rangeStart = dayjs(range[0]);
+  const rangeEnd = dayjs(range[1]);
+
   const files = await readdir(DATA_PATH);
   const allSchedules = await Promise.all(files.map(async (file) => {
     const id = file.replace(FILE_EXTENSION, "");

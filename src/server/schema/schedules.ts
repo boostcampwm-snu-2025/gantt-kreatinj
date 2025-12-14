@@ -15,3 +15,7 @@ export const scheduleSchema = z.object({
 });
 
 export type Schedule = z.infer<typeof scheduleSchema>;
+
+export const dateRangeSchema = z.tuple([z.iso.date(), z.iso.date()]);
+
+export type DateRange = z.infer<typeof dateRangeSchema>;
