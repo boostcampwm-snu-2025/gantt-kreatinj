@@ -110,6 +110,12 @@ export default function GanttChart({
     );
   };
 
+  const removeSchedule = (id: string) => {
+    setSchedules((prevSchedules) =>
+      prevSchedules.filter((schedule) => schedule.id !== id),
+    );
+  };
+
   const handleMouseDown = (e: React.MouseEvent, scheduleId: string) => {
     e.preventDefault();
     const schedule = schedules.find((s) => s.id === scheduleId);
@@ -226,7 +232,7 @@ export default function GanttChart({
         return (
           <div
             className={cn(
-              "z-10 h-10 cursor-move bg-amber-100 select-none",
+              "flex w-full cursor-move items-center justify-end bg-amber-100 p-2 select-none",
               dragState?.scheduleId === schedule.id && "opacity-70",
             )}
             key={schedule.id}
@@ -237,7 +243,16 @@ export default function GanttChart({
               gridRow: index + 2,
             }}
           >
-            {/* <Schedule schedule={schedule} /> */}
+            <button
+              onClick={() => {
+                removeSchedule(schedule.id);
+              }}
+              onMouseDown={(e) => {
+                e.stopPropagation();
+              }}
+            >
+              X
+            </button>
           </div>
         );
       })}
