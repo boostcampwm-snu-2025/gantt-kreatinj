@@ -74,6 +74,12 @@ export default function GanttChart({
 }: Props) {
   const [schedules, setSchedules] =
     useState<ScheduleWithModificationRecords[]>(sampleSchedules);
+  const [dragState, setDragState] = useState<null | {
+    scheduleId: string;
+    startColIndex: number;
+    startX: number;
+  }>(null);
+
   const moveSchedule = (id: string, count: number) => {
     setSchedules((prevSchedules) =>
       prevSchedules.map((schedule) =>
@@ -99,14 +105,45 @@ export default function GanttChart({
     );
   };
 
+  const handleMouseDown = (
+    e: React.MouseEvent,
+    scheduleId: string,
+    startColIndex: number,
+  ) => {
+    e.preventDefault();
+    setDragState({
+      scheduleId,
+      startColIndex,
+      startX: e.clientX,
+    });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!dragState) return;
+
+    const deltaX = e.clientX - dragState.startX;
+    const columnWidth = 48; // 3rem = 48px
+    const columnsMoved = Math.round(deltaX / columnWidth);
+
+    if (columnsMoved !== 0) {
+      moveSchedule(dragState.scheduleId, columnsMoved);
+      setDragState({
+        ...dragState,
+        startX: e.clientX,
+      });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setDragState(null);
+  };
+
   const firstDateOnView = dayjs(pivotDate)
     .add(dateOffset, "day")
     .subtract(DATE_PADDING + DATE_MARGIN, "day");
   const lastDateOnView = dayjs(pivotDate)
     .add(dateOffset, "day")
     .add(DATE_PADDING + DATE_MARGIN, "day");
-  console.log("firstDateOnView", firstDateOnView.format("YYYY-MM-DD"));
-  console.log("lastDateOnView", lastDateOnView.format("YYYY-MM-DD"));
 
   const dates = range(DATE_SIZE).map((_, index) => {
     const date = firstDateOnView.add(index, "day");
@@ -119,7 +156,12 @@ export default function GanttChart({
   });
 
   return (
-    <div className="grid grid-cols-[repeat(29,3rem)]">
+    <div
+      className="grid grid-cols-[repeat(29,3rem)]"
+      onMouseLeave={handleMouseUp}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+    >
       {/* Header */}
       {dates.map((date) => (
         <div
@@ -147,8 +189,12 @@ export default function GanttChart({
           ) + 1;
         return (
           <div
-            className="h-10 bg-amber-100"
+            className={cn(
+              "h-10 cursor-move bg-amber-100 select-none",
+              dragState?.scheduleId === schedule.id && "opacity-70",
+            )}
             key={schedule.id}
+            onMouseDown={(e) => handleMouseDown(e, schedule.id, startColIndex)}
             style={{
               gridColumnEnd: endColIndex,
               gridColumnStart: startColIndex,
