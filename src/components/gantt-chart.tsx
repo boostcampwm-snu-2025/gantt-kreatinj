@@ -76,7 +76,8 @@ export default function GanttChart({
     useState<ScheduleWithModificationRecords[]>(sampleSchedules);
   const [dragState, setDragState] = useState<null | {
     columnOffset: number;
-    dragType: "move" | "resize-start";
+    dragType: "move" | "resize-end" | "resize-start";
+    initialEndDate?: string;
     initialStartDate: string;
     scheduleId: string;
     startX: number;
@@ -153,10 +154,27 @@ export default function GanttChart({
     );
   };
 
+  const updateEndDate = (id: string, endDate: Dayjs) => {
+    setSchedules((prevSchedules) =>
+      prevSchedules
+        .map((schedule) =>
+          schedule.id === id
+            ? {
+                ...schedule,
+                endDate: endDate.format("YYYY-MM-DD"),
+              }
+            : schedule,
+        )
+        .toSorted(
+          (a, b) => dayjs(a.startDate).valueOf() - dayjs(b.startDate).valueOf(),
+        ),
+    );
+  };
+
   const handleMouseDown = (
     e: React.MouseEvent,
     scheduleId: string,
-    dragType: "move" | "resize-start" = "move",
+    dragType: "move" | "resize-end" | "resize-start" = "move",
   ) => {
     e.preventDefault();
     const schedule = schedules.find((s) => s.id === scheduleId);
@@ -165,6 +183,7 @@ export default function GanttChart({
     setDragState({
       columnOffset: 0,
       dragType,
+      initialEndDate: schedule.endDate,
       initialStartDate: schedule.startDate,
       scheduleId,
       startX: e.clientX,
@@ -204,6 +223,19 @@ export default function GanttChart({
           // 시작일이 종료일 이후가 되지 않도록 제한
           if (newStartDate.isBefore(endDate) || newStartDate.isSame(endDate)) {
             updateStartDate(dragState.scheduleId, newStartDate);
+          }
+        }
+      } else if (dragState.dragType === "resize-end") {
+        const schedule = schedules.find((s) => s.id === dragState.scheduleId);
+        if (schedule && dragState.initialEndDate) {
+          const newEndDate = dayjs(dragState.initialEndDate).add(
+            dragState.columnOffset,
+            "day",
+          );
+          const startDate = dayjs(schedule.startDate);
+          // 종료일이 시작일 이전이 되지 않도록 제한
+          if (newEndDate.isAfter(startDate) || newEndDate.isSame(startDate)) {
+            updateEndDate(dragState.scheduleId, newEndDate);
           }
         }
       }
@@ -278,16 +310,22 @@ export default function GanttChart({
           dragState?.scheduleId === schedule.id && dragState.columnOffset !== 0;
         const isResizingStart =
           isDragging && dragState?.dragType === "resize-start";
+        const isResizingEnd = isDragging && dragState?.dragType === "resize-end";
         const isMoving = isDragging && dragState?.dragType === "move";
 
         const startDate = isResizingStart
           ? dayjs(dragState.initialStartDate).add(dragState.columnOffset, "day")
           : isMoving
-            ? dayjs(dragState.initialStartDate).add(dragState.columnOffset, "day")
+            ? dayjs(dragState.initialStartDate).add(
+                dragState.columnOffset,
+                "day",
+              )
             : dayjs(schedule.startDate);
-        const endDate = isMoving
-          ? dayjs(schedule.endDate).add(dragState.columnOffset, "day")
-          : dayjs(schedule.endDate);
+        const endDate = isResizingEnd
+          ? dayjs(dragState.initialEndDate).add(dragState.columnOffset, "day")
+          : isMoving
+            ? dayjs(schedule.endDate).add(dragState.columnOffset, "day")
+            : dayjs(schedule.endDate);
 
         const startColIndex = calculateGridColumnIndex(
           [firstDateOnView, lastDateOnView],
@@ -318,13 +356,24 @@ export default function GanttChart({
             >
               {/* Start resize handle */}
               <div
-                className="absolute left-0 top-0 h-full w-2 cursor-ew-resize opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute left-0 top-0 h-full w-2 cursor-ew-resize opacity-0 transition-opacity group-hover:opacity-100"
                 onMouseDown={(e) => {
                   e.stopPropagation();
                   handleMouseDown(e, schedule.id, "resize-start");
                 }}
               >
-                <div className="h-full w-full bg-amber-400 rounded-l-md" />
+                <div className="h-full w-full rounded-l-md bg-amber-400" />
+              </div>
+
+              {/* End resize handle */}
+              <div
+                className="absolute right-0 top-0 h-full w-2 cursor-ew-resize opacity-0 transition-opacity group-hover:opacity-100"
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  handleMouseDown(e, schedule.id, "resize-end");
+                }}
+              >
+                <div className="h-full w-full rounded-r-md bg-amber-400" />
               </div>
 
               <button
