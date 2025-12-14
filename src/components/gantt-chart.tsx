@@ -91,12 +91,12 @@ export default function GanttChart({
   });
 
   return (
-    <div className="grid grid-cols-[repeat(29,4rem)]">
+    <div className="grid grid-cols-[repeat(29,3rem)]">
       {/* Header */}
       {dates.map((date) => (
         <div
           className={cn(
-            "h-10 w-16 border border-gray-200 text-center text-sm",
+            "h-10 w-full border border-gray-200 text-center text-sm",
             date.isWeekend || date.isHoliday
               ? "bg-red-100 dark:bg-red-900"
               : "bg-white dark:bg-black",
