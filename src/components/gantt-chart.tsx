@@ -2,6 +2,7 @@
 
 import dayjs, { type Dayjs } from "dayjs";
 import { range } from "es-toolkit";
+import { useState } from "react";
 
 import { cn } from "@/lib/utils";
 import { ScheduleWithModificationRecords } from "@/server/schema/schedules";
@@ -30,46 +31,49 @@ const DATE_SIZE = 1 + DATE_PADDING * 2 + DATE_MARGIN * 2;
 // const ITEM_BUFFER = 5;
 // const ITEM_SIZE = 10 + ITEM_BUFFER * 2;
 
+const sampleSchedules: ScheduleWithModificationRecords[] = [
+  {
+    endDate: "2025-12-16",
+    id: "24d65ae6-e3af-4b1e-a86a-ebea7102e2b7",
+    modificationRecords: [
+      {
+        changeDescription: "Initial creation",
+        modificationDate: "2025-12-14T10:28:52.369Z",
+      },
+    ],
+    startDate: "2025-12-11",
+  },
+  {
+    endDate: "2025-12-15",
+    id: "b3aa62b4-359a-4f30-ac2e-abf95437a233",
+    modificationRecords: [
+      {
+        changeDescription: "Initial creation",
+        modificationDate: "2025-12-14T10:28:41.801Z",
+      },
+    ],
+    startDate: "2025-12-12",
+  },
+  {
+    endDate: "2025-12-18",
+    id: "ed04a636-1f44-4927-b8f6-732aa0338750",
+    modificationRecords: [
+      {
+        changeDescription: "Initial creation",
+        modificationDate: "2025-12-14T10:28:27.065Z",
+      },
+    ],
+    startDate: "2025-12-14",
+  },
+];
+
 export default function GanttChart({
   dateOffset,
   // indexOffset,
   pivotDate,
 }: Props) {
-  const schedules: ScheduleWithModificationRecords[] = [
-    {
-      endDate: "2025-12-16",
-      id: "24d65ae6-e3af-4b1e-a86a-ebea7102e2b7",
-      modificationRecords: [
-        {
-          changeDescription: "Initial creation",
-          modificationDate: "2025-12-14T10:28:52.369Z",
-        },
-      ],
-      startDate: "2025-12-11",
-    },
-    {
-      endDate: "2025-12-15",
-      id: "b3aa62b4-359a-4f30-ac2e-abf95437a233",
-      modificationRecords: [
-        {
-          changeDescription: "Initial creation",
-          modificationDate: "2025-12-14T10:28:41.801Z",
-        },
-      ],
-      startDate: "2025-12-12",
-    },
-    {
-      endDate: "2025-12-18",
-      id: "ed04a636-1f44-4927-b8f6-732aa0338750",
-      modificationRecords: [
-        {
-          changeDescription: "Initial creation",
-          modificationDate: "2025-12-14T10:28:27.065Z",
-        },
-      ],
-      startDate: "2025-12-14",
-    },
-  ];
+  const [schedules] =
+    useState<ScheduleWithModificationRecords[]>(sampleSchedules);
 
   const firstDateOnView = dayjs(pivotDate)
     .add(dateOffset, "day")
