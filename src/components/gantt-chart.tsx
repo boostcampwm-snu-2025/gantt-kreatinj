@@ -116,6 +116,25 @@ export default function GanttChart({
     );
   };
 
+  const createSchedule = (startDate: string, endDate: string) => {
+    const newSchedule: ScheduleWithModificationRecords = {
+      endDate,
+      id: crypto.randomUUID(),
+      modificationRecords: [
+        {
+          changeDescription: "Initial creation",
+          modificationDate: dayjs().toISOString(),
+        },
+      ],
+      startDate,
+    };
+    setSchedules((prevSchedules) =>
+      [...prevSchedules, newSchedule].toSorted(
+        (a, b) => dayjs(a.startDate).valueOf() - dayjs(b.startDate).valueOf(),
+      ),
+    );
+  };
+
   const handleMouseDown = (e: React.MouseEvent, scheduleId: string) => {
     e.preventDefault();
     const schedule = schedules.find((s) => s.id === scheduleId);
@@ -204,6 +223,9 @@ export default function GanttChart({
                 : "bg-white dark:bg-black",
             )}
             key={`${rowIndex}-${date.key}`}
+            onClick={() => {
+              createSchedule(date.key, date.key);
+            }}
             style={{
               gridColumn: colIndex + 1,
               gridRow: rowIndex + 2,
