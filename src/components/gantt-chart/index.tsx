@@ -4,12 +4,15 @@ import dayjs, { type Dayjs } from "dayjs";
 import { range } from "es-toolkit";
 import { useEffect, useRef, useState } from "react";
 
-import { cn } from "@/lib/utils";
 import { ScheduleWithModificationRecords } from "@/server/schema/schedules";
+
+import { GanttGrid } from "./gantt-grid";
+import { GanttHeader } from "./gantt-header";
+import { ScheduleItem } from "./schedule-item";
+import { type DragState } from "./types";
 
 interface Props {
   dateOffset: number;
-  // indexOffset: number;
   pivotDate: Dayjs;
 }
 
@@ -23,13 +26,6 @@ interface Props {
 const DATE_PADDING = 7;
 const DATE_MARGIN = 7;
 const DATE_SIZE = 1 + DATE_PADDING * 2 + DATE_MARGIN * 2;
-/*
- * Display 10 lines of items
- * + 5 upper buffer
- * + 5 lower buffer
- */
-// const ITEM_BUFFER = 5;
-// const ITEM_SIZE = 10 + ITEM_BUFFER * 2;
 
 const sampleSchedules: ScheduleWithModificationRecords[] = [
   {
@@ -67,21 +63,10 @@ const sampleSchedules: ScheduleWithModificationRecords[] = [
   },
 ];
 
-export default function GanttChart({
-  dateOffset,
-  // indexOffset,
-  pivotDate,
-}: Props) {
+export default function GanttChart({ dateOffset, pivotDate }: Props) {
   const [schedules, setSchedules] =
     useState<ScheduleWithModificationRecords[]>(sampleSchedules);
-  const [dragState, setDragState] = useState<null | {
-    columnOffset: number;
-    dragType: "move" | "resize-end" | "resize-start";
-    initialEndDate?: string;
-    initialStartDate: string;
-    scheduleId: string;
-    startX: number;
-  }>(null);
+  const [dragState, setDragState] = useState<DragState | null>(null);
   const [highlightedScheduleId, setHighlightedScheduleId] = useState<
     null | string
   >(null);
@@ -243,7 +228,6 @@ export default function GanttChart({
             "day",
           );
           const endDate = dayjs(schedule.endDate);
-          // 시작일이 종료일 이후가 되지 않도록 제한
           if (newStartDate.isBefore(endDate) || newStartDate.isSame(endDate)) {
             updateStartDate(dragState.scheduleId, newStartDate);
             setHighlightedScheduleId(dragState.scheduleId);
@@ -257,7 +241,6 @@ export default function GanttChart({
             "day",
           );
           const startDate = dayjs(schedule.startDate);
-          // 종료일이 시작일 이전이 되지 않도록 제한
           if (newEndDate.isAfter(startDate) || newEndDate.isSame(startDate)) {
             updateEndDate(dragState.scheduleId, newEndDate);
             setHighlightedScheduleId(dragState.scheduleId);
@@ -278,7 +261,7 @@ export default function GanttChart({
   const dates = range(DATE_SIZE).map((_, index) => {
     const date = firstDateOnView.add(index, "day");
     return {
-      isHoliday: false, // TODO: 휴일 여부 로직 추가
+      isHoliday: false,
       isWeekend: date.day() === 0 || date.day() === 6,
       key: date.format("YYYY-MM-DD"),
       label: date.format("DD"),
@@ -292,152 +275,35 @@ export default function GanttChart({
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
     >
-      {/* Header */}
-      {dates.map((date) => (
-        <div
-          className={cn(
-            "flex h-10 w-full items-center justify-center border-r border-b border-gray-300 text-center text-sm",
-            date.isWeekend || date.isHoliday
-              ? "bg-gray-100 dark:bg-gray-800"
-              : "bg-white dark:bg-black",
-          )}
-          key={date.key}
-        >
-          {date.label}
-        </div>
+      <GanttHeader dates={dates} />
+
+      <GanttGrid
+        dates={dates}
+        firstDateOnView={firstDateOnView}
+        onCellClick={(date) => createSchedule(date, date)}
+        scheduleCount={schedules.length}
+      />
+
+      {schedules.map((schedule, index) => (
+        <ScheduleItem
+          dragState={dragState}
+          firstDateOnView={firstDateOnView}
+          highlightedScheduleId={highlightedScheduleId}
+          index={index}
+          key={schedule.id}
+          lastDateOnView={lastDateOnView}
+          onMouseDown={handleMouseDown}
+          onRemove={removeSchedule}
+          schedule={schedule}
+          scheduleRef={(el) => {
+            if (el) {
+              scheduleRefs.current.set(schedule.id, el);
+            } else {
+              scheduleRefs.current.delete(schedule.id);
+            }
+          }}
+        />
       ))}
-
-      {/* Grid cells for schedule rows */}
-      {schedules.map((_, rowIndex) =>
-        dates.map((date, colIndex) => (
-          <div
-            className={cn(
-              "h-10 w-full border-r border-b border-dashed border-gray-200",
-              date.isWeekend || date.isHoliday
-                ? "bg-gray-100 dark:bg-gray-800"
-                : "bg-white dark:bg-black",
-            )}
-            key={`${rowIndex}-${date.key}`}
-            onClick={() => {
-              const date = firstDateOnView.add(colIndex, "day");
-              createSchedule(date, date);
-            }}
-            style={{
-              gridColumn: colIndex + 1,
-              gridRow: rowIndex + 2,
-            }}
-          />
-        )),
-      )}
-
-      {schedules.map((schedule, index) => {
-        const isDragging =
-          dragState?.scheduleId === schedule.id && dragState.columnOffset !== 0;
-        const isResizingStart =
-          isDragging && dragState?.dragType === "resize-start";
-        const isResizingEnd =
-          isDragging && dragState?.dragType === "resize-end";
-        const isMoving = isDragging && dragState?.dragType === "move";
-
-        const startDate = isResizingStart
-          ? dayjs(dragState.initialStartDate).add(dragState.columnOffset, "day")
-          : isMoving
-            ? dayjs(dragState.initialStartDate).add(
-                dragState.columnOffset,
-                "day",
-              )
-            : dayjs(schedule.startDate);
-        const endDate = isResizingEnd
-          ? dayjs(dragState.initialEndDate).add(dragState.columnOffset, "day")
-          : isMoving
-            ? dayjs(schedule.endDate).add(dragState.columnOffset, "day")
-            : dayjs(schedule.endDate);
-
-        const startColIndex = calculateGridColumnIndex(
-          [firstDateOnView, lastDateOnView],
-          startDate,
-        );
-        const endColIndex =
-          calculateGridColumnIndex([firstDateOnView, lastDateOnView], endDate) +
-          1;
-        return (
-          <div
-            className="flex items-center p-1"
-            key={schedule.id}
-            ref={(el) => {
-              if (el) {
-                scheduleRefs.current.set(schedule.id, el);
-              } else {
-                scheduleRefs.current.delete(schedule.id);
-              }
-            }}
-            style={{
-              gridColumnEnd: endColIndex,
-              gridColumnStart: startColIndex,
-              gridRow: index + 2,
-            }}
-          >
-            <div
-              className={cn(
-                "group flex h-full w-full cursor-move items-center justify-between select-none",
-                "rounded-md",
-                "border border-amber-200 shadow-sm",
-                "transition-all hover:shadow-md",
-                dragState?.scheduleId === schedule.id && "opacity-70 shadow-lg",
-                highlightedScheduleId === schedule.id
-                  ? "bg-amber-300 animate-[pulse_0.6s_ease-in-out_2]"
-                  : "bg-amber-100",
-              )}
-              onMouseDown={(e) => handleMouseDown(e, schedule.id, "move")}
-            >
-              {/* Start resize handle */}
-              <div
-                className="h-full w-2 cursor-ew-resize opacity-0 transition-opacity group-hover:opacity-100"
-                onMouseDown={(e) => {
-                  e.stopPropagation();
-                  handleMouseDown(e, schedule.id, "resize-start");
-                }}
-              >
-                <div className="h-full w-full rounded-l-md bg-amber-400" />
-              </div>
-              <div className="flex flex-1 justify-end">
-                <button
-                  className="rounded px-1 transition-colors hover:bg-amber-200"
-                  onClick={() => {
-                    removeSchedule(schedule.id);
-                  }}
-                  onMouseDown={(e) => {
-                    e.stopPropagation();
-                  }}
-                >
-                  X
-                </button>
-              </div>
-
-              {/* End resize handle */}
-              <div
-                className="h-full w-2 cursor-ew-resize opacity-0 transition-opacity group-hover:opacity-100"
-                onMouseDown={(e) => {
-                  e.stopPropagation();
-                  handleMouseDown(e, schedule.id, "resize-end");
-                }}
-              >
-                <div className="h-full w-full rounded-r-md bg-amber-400" />
-              </div>
-            </div>
-          </div>
-        );
-      })}
     </div>
   );
-}
-
-function calculateGridColumnIndex(range: [Dayjs, Dayjs], date: Dayjs) {
-  if (date.valueOf() < range[0].valueOf()) {
-    return 1;
-  }
-  if (date.valueOf() > range[1].valueOf()) {
-    return range[1].diff(range[0], "day") + 2;
-  }
-  return date.diff(range[0], "day") + 1;
 }
