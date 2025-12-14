@@ -1,14 +1,9 @@
-import { list, remove, write } from "../repositories/schedules";
-import { DateRange, Schedule } from "../schema/schedules";
+import { list, remove, update, write } from "../repositories/schedules";
+import { DateRange, Schedule, ScheduleBody } from "../schema/schedules";
 
-export async function createSchedule(schedule: Omit<Schedule, "id">) {
-  const id = Bun.randomUUIDv7();
-  const newSchedule: Schedule = {
-    ...schedule,
-    id,
-  };
-  await write(newSchedule);
-  return newSchedule;
+export async function createSchedule(schedule: ScheduleBody) {
+  const createdSchedule = await write(schedule);
+  return createdSchedule;
 }
 
 export async function deleteSchedule(id: Schedule["id"]) {
@@ -22,6 +17,6 @@ export async function readSchedules(dateRange: DateRange) {
 }
 
 export async function updateSchedule(schedule: Schedule) {
-  await write(schedule);
-  return schedule;
+  const updatedSchedule = await update(schedule);
+  return updatedSchedule;
 }

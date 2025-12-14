@@ -7,10 +7,15 @@ export const modificationRecordSchema = z.object({
 
 export type ModificationRecord = z.infer<typeof modificationRecordSchema>;
 
-export const scheduleSchema = z.object({
+export const scheduleBodySchema = z.object({
   endDate: z.iso.date(),
-  id: z.string(),
   startDate: z.iso.date(),
+});
+
+export type ScheduleBody = z.infer<typeof scheduleBodySchema>;
+
+export const scheduleSchema = scheduleBodySchema.extend({
+  id: z.string(),
 });
 
 export type Schedule = z.infer<typeof scheduleSchema>;

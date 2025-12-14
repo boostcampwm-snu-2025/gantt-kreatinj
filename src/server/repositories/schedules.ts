@@ -1,7 +1,7 @@
 import dayjs from "dayjs";
 import { readdir } from "node:fs/promises";
 
-import type { DateRange, Schedule, ScheduleWithModificationRecords } from "@/server/schema/schedules";
+import type { DateRange, Schedule, ScheduleBody, ScheduleWithModificationRecords } from "@/server/schema/schedules";
 
 import { scheduleWithModificationRecordsSchema } from "@/server/schema/schedules";
 
@@ -52,13 +52,13 @@ export async function remove(id: Schedule["id"]): Promise<void> {
   await file.delete();
 }
 
-export async function update(schedule: Schedule): Promise<void> {
+export async function update(schedule: Schedule): Promise<ScheduleWithModificationRecords> {
   const path = `${DATA_PATH}${schedule.id}${FILE_EXTENSION}`;
   const existingSchedule = await read(schedule.id);
   const scheduleWithModificationRecords = {
     ...schedule,
     modificationRecords: [
-      existingSchedule.modificationRecords,
+      ...existingSchedule.modificationRecords,
       {
         changeDescription: "Schedule updated",
         modificationDate: dayjs().toISOString(),
@@ -67,12 +67,15 @@ export async function update(schedule: Schedule): Promise<void> {
   };
 
   await Bun.write(path, JSON.stringify(scheduleWithModificationRecords));
+  return scheduleWithModificationRecords;
 }
 
-export async function write(schedule: Schedule): Promise<void> {
-  const path = `${DATA_PATH}${schedule.id}${FILE_EXTENSION}`;
+export async function write(schedule: ScheduleBody): Promise<ScheduleWithModificationRecords> {
+  const id = Bun.randomUUIDv7();
+  const path = `${DATA_PATH}${id}${FILE_EXTENSION}`;
   const scheduleWithModificationRecords = {
     ...schedule,
+    id,
     modificationRecords: [
       {
         changeDescription: "Initial creation",
@@ -81,4 +84,5 @@ export async function write(schedule: Schedule): Promise<void> {
     ],
   };
   await Bun.write(path, JSON.stringify(scheduleWithModificationRecords));
+  return scheduleWithModificationRecords;
 }
