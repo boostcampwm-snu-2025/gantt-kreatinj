@@ -2,7 +2,7 @@
 
 import dayjs, { type Dayjs } from "dayjs";
 import { range } from "es-toolkit";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 import { ScheduleWithModificationRecords } from "@/server/schema/schedules";
@@ -85,9 +85,18 @@ export default function GanttChart({
   const [highlightedScheduleId, setHighlightedScheduleId] = useState<
     null | string
   >(null);
+  const scheduleRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   useEffect(() => {
     if (highlightedScheduleId) {
+      const element = scheduleRefs.current.get(highlightedScheduleId);
+      if (element) {
+        element.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+
       const timer = setTimeout(() => {
         setHighlightedScheduleId(null);
       }, 600);
@@ -355,6 +364,13 @@ export default function GanttChart({
           <div
             className="flex items-center p-1"
             key={schedule.id}
+            ref={(el) => {
+              if (el) {
+                scheduleRefs.current.set(schedule.id, el);
+              } else {
+                scheduleRefs.current.delete(schedule.id);
+              }
+            }}
             style={{
               gridColumnEnd: endColIndex,
               gridColumnStart: startColIndex,
