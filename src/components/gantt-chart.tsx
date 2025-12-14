@@ -231,28 +231,36 @@ export default function GanttChart({
           1;
         return (
           <div
-            className={cn(
-              "flex w-full cursor-move items-center justify-end bg-amber-100 p-2 select-none",
-              dragState?.scheduleId === schedule.id && "opacity-70",
-            )}
+            className="flex items-center p-1"
             key={schedule.id}
-            onMouseDown={(e) => handleMouseDown(e, schedule.id)}
             style={{
               gridColumnEnd: endColIndex,
               gridColumnStart: startColIndex,
               gridRow: index + 2,
             }}
           >
-            <button
-              onClick={() => {
-                removeSchedule(schedule.id);
-              }}
-              onMouseDown={(e) => {
-                e.stopPropagation();
-              }}
+            <div
+              className={cn(
+                "flex h-full w-full cursor-move items-center justify-end select-none",
+                "rounded-md bg-amber-100 px-3",
+                "border border-amber-200 shadow-sm",
+                "transition-shadow hover:shadow-md",
+                dragState?.scheduleId === schedule.id && "opacity-70 shadow-lg",
+              )}
+              onMouseDown={(e) => handleMouseDown(e, schedule.id)}
             >
-              X
-            </button>
+              <button
+                className="rounded px-1 transition-colors hover:bg-amber-200"
+                onClick={() => {
+                  removeSchedule(schedule.id);
+                }}
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                }}
+              >
+                X
+              </button>
+            </div>
           </div>
         );
       })}
