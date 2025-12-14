@@ -310,7 +310,8 @@ export default function GanttChart({
           dragState?.scheduleId === schedule.id && dragState.columnOffset !== 0;
         const isResizingStart =
           isDragging && dragState?.dragType === "resize-start";
-        const isResizingEnd = isDragging && dragState?.dragType === "resize-end";
+        const isResizingEnd =
+          isDragging && dragState?.dragType === "resize-end";
         const isMoving = isDragging && dragState?.dragType === "move";
 
         const startDate = isResizingStart
@@ -346,8 +347,8 @@ export default function GanttChart({
           >
             <div
               className={cn(
-                "group relative flex h-full w-full cursor-move items-center justify-between select-none",
-                "rounded-md bg-amber-100 px-3",
+                "group flex h-full w-full cursor-move items-center justify-between select-none",
+                "rounded-md bg-amber-100",
                 "border border-amber-200 shadow-sm",
                 "transition-shadow hover:shadow-md",
                 dragState?.scheduleId === schedule.id && "opacity-70 shadow-lg",
@@ -356,7 +357,7 @@ export default function GanttChart({
             >
               {/* Start resize handle */}
               <div
-                className="absolute left-0 top-0 h-full w-2 cursor-ew-resize opacity-0 transition-opacity group-hover:opacity-100"
+                className="h-full w-2 cursor-ew-resize opacity-0 transition-opacity group-hover:opacity-100"
                 onMouseDown={(e) => {
                   e.stopPropagation();
                   handleMouseDown(e, schedule.id, "resize-start");
@@ -364,10 +365,23 @@ export default function GanttChart({
               >
                 <div className="h-full w-full rounded-l-md bg-amber-400" />
               </div>
+              <div className="flex flex-1 justify-end">
+                <button
+                  className="rounded px-1 transition-colors hover:bg-amber-200"
+                  onClick={() => {
+                    removeSchedule(schedule.id);
+                  }}
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                  }}
+                >
+                  X
+                </button>
+              </div>
 
               {/* End resize handle */}
               <div
-                className="absolute right-0 top-0 h-full w-2 cursor-ew-resize opacity-0 transition-opacity group-hover:opacity-100"
+                className="h-full w-2 cursor-ew-resize opacity-0 transition-opacity group-hover:opacity-100"
                 onMouseDown={(e) => {
                   e.stopPropagation();
                   handleMouseDown(e, schedule.id, "resize-end");
@@ -375,18 +389,6 @@ export default function GanttChart({
               >
                 <div className="h-full w-full rounded-r-md bg-amber-400" />
               </div>
-
-              <button
-                className="rounded px-1 transition-colors hover:bg-amber-200"
-                onClick={() => {
-                  removeSchedule(schedule.id);
-                }}
-                onMouseDown={(e) => {
-                  e.stopPropagation();
-                }}
-              >
-                X
-              </button>
             </div>
           </div>
         );
