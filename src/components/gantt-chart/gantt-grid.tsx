@@ -1,4 +1,5 @@
 import { type Dayjs } from "dayjs";
+import { range } from "es-toolkit";
 
 import { cn } from "@/lib/utils";
 
@@ -19,7 +20,7 @@ export function GanttGrid({
 }: GanttGridProps) {
   return (
     <>
-      {Array.from({ length: scheduleCount }).map((_, rowIndex) =>
+      {range(scheduleCount).map((_, rowIndex) =>
         dates.map((date, colIndex) => (
           <div
             className={cn(
