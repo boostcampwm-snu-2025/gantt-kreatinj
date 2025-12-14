@@ -83,26 +83,30 @@ export default function GanttChart({
 
   const moveSchedule = (id: string, count: number) => {
     setSchedules((prevSchedules) =>
-      prevSchedules.map((schedule) =>
-        schedule.id === id
-          ? {
-              ...schedule,
-              endDate: dayjs(schedule.endDate)
-                .add(count, "day")
-                .format("YYYY-MM-DD"),
-              modificationRecords: [
-                ...schedule.modificationRecords,
-                {
-                  changeDescription: `Moved by ${count} days`,
-                  modificationDate: dayjs().toISOString(),
-                },
-              ],
-              startDate: dayjs(schedule.startDate)
-                .add(count, "day")
-                .format("YYYY-MM-DD"),
-            }
-          : schedule,
-      ),
+      prevSchedules
+        .map((schedule) =>
+          schedule.id === id
+            ? {
+                ...schedule,
+                endDate: dayjs(schedule.endDate)
+                  .add(count, "day")
+                  .format("YYYY-MM-DD"),
+                modificationRecords: [
+                  ...schedule.modificationRecords,
+                  {
+                    changeDescription: `Moved by ${count} days`,
+                    modificationDate: dayjs().toISOString(),
+                  },
+                ],
+                startDate: dayjs(schedule.startDate)
+                  .add(count, "day")
+                  .format("YYYY-MM-DD"),
+              }
+            : schedule,
+        )
+        .toSorted(
+          (a, b) => dayjs(a.startDate).valueOf() - dayjs(b.startDate).valueOf(),
+        ),
     );
   };
 
