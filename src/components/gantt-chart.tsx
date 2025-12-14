@@ -75,8 +75,9 @@ export default function GanttChart({
   const [schedules, setSchedules] =
     useState<ScheduleWithModificationRecords[]>(sampleSchedules);
   const [dragState, setDragState] = useState<null | {
+    columnOffset: number;
+    initialStartDate: string;
     scheduleId: string;
-    startColIndex: number;
     startX: number;
   }>(null);
 
@@ -105,15 +106,15 @@ export default function GanttChart({
     );
   };
 
-  const handleMouseDown = (
-    e: React.MouseEvent,
-    scheduleId: string,
-    startColIndex: number,
-  ) => {
+  const handleMouseDown = (e: React.MouseEvent, scheduleId: string) => {
     e.preventDefault();
+    const schedule = schedules.find((s) => s.id === scheduleId);
+    if (!schedule) return;
+
     setDragState({
+      columnOffset: 0,
+      initialStartDate: schedule.startDate,
       scheduleId,
-      startColIndex,
       startX: e.clientX,
     });
   };
@@ -121,20 +122,25 @@ export default function GanttChart({
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!dragState) return;
 
+    const gridElement = e.currentTarget;
+    const gridRect = gridElement.getBoundingClientRect();
+    const columnWidth = gridRect.width / DATE_SIZE;
+
     const deltaX = e.clientX - dragState.startX;
-    const columnWidth = 48; // 3rem = 48px
     const columnsMoved = Math.round(deltaX / columnWidth);
 
-    if (columnsMoved !== 0) {
-      moveSchedule(dragState.scheduleId, columnsMoved);
+    if (columnsMoved !== dragState.columnOffset) {
       setDragState({
         ...dragState,
-        startX: e.clientX,
+        columnOffset: columnsMoved,
       });
     }
   };
 
   const handleMouseUp = () => {
+    if (dragState && dragState.columnOffset !== 0) {
+      moveSchedule(dragState.scheduleId, dragState.columnOffset);
+    }
     setDragState(null);
   };
 
@@ -178,15 +184,22 @@ export default function GanttChart({
       ))}
 
       {schedules.map((schedule, index) => {
+        const isDragging =
+          dragState?.scheduleId === schedule.id && dragState.columnOffset !== 0;
+        const startDate = isDragging
+          ? dayjs(dragState.initialStartDate).add(dragState.columnOffset, "day")
+          : dayjs(schedule.startDate);
+        const endDate = isDragging
+          ? dayjs(schedule.endDate).add(dragState.columnOffset, "day")
+          : dayjs(schedule.endDate);
+
         const startColIndex = calculateGridColumnIndex(
           [firstDateOnView, lastDateOnView],
-          dayjs(schedule.startDate),
+          startDate,
         );
         const endColIndex =
-          calculateGridColumnIndex(
-            [firstDateOnView, lastDateOnView],
-            dayjs(schedule.endDate),
-          ) + 1;
+          calculateGridColumnIndex([firstDateOnView, lastDateOnView], endDate) +
+          1;
         return (
           <div
             className={cn(
@@ -194,7 +207,7 @@ export default function GanttChart({
               dragState?.scheduleId === schedule.id && "opacity-70",
             )}
             key={schedule.id}
-            onMouseDown={(e) => handleMouseDown(e, schedule.id, startColIndex)}
+            onMouseDown={(e) => handleMouseDown(e, schedule.id)}
             style={{
               gridColumnEnd: endColIndex,
               gridColumnStart: startColIndex,
