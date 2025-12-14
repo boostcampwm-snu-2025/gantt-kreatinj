@@ -8,7 +8,7 @@
 - ESLint
 - Prettier
 - Tailwind CSS
-- Shadcn UI
+- ~Shadcn UI~
 
 ## Demo Video
 
