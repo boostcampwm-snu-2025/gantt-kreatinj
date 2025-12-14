@@ -177,7 +177,7 @@ export default function GanttChart({
         </div>
       ))}
 
-      {schedules.map((schedule) => {
+      {schedules.map((schedule, index) => {
         const startColIndex = calculateGridColumnIndex(
           [firstDateOnView, lastDateOnView],
           dayjs(schedule.startDate),
@@ -198,6 +198,7 @@ export default function GanttChart({
             style={{
               gridColumnEnd: endColIndex,
               gridColumnStart: startColIndex,
+              gridRow: index + 2,
             }}
           >
             {/* <Schedule schedule={schedule} /> */}
